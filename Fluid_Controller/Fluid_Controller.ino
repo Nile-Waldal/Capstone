@@ -12,7 +12,7 @@
 
 #define CALIBRATION_TIME 10000
 #define FLUSH_TIME 10000
-#define MAX_ROWS 90
+#define MAX_ROWS 300
 #define RAMP_TIME 0
 
 #define FULL_SPEED 255
@@ -62,7 +62,7 @@ int state = 5;
 int pidState = 0;
 bool flowState = false;
 int numRows = 0;
-double curve[MAX_ROWS][2] = {{0.0, 20.0}, {60.0, 0.0}};
+float curve[MAX_ROWS][2] ;
 int curveIndex = 0;
 
 const byte numRowsSize = sizeof(int);
@@ -74,7 +74,7 @@ void setup() {
   pinMode(WATER, OUTPUT);
   pinMode(SALT, OUTPUT);
   Input = analogRead(CONCENTRATION);
-  numRows = 2;    // TEMPORARY LINE
+  //numRows = 2;    // TEMPORARY LINE
 
 
   Serial.begin(115200);
@@ -93,15 +93,16 @@ void setup() {
 void loop() {
 
 
-  for (int i = 0; i < 50; i++) {
-    conc += analogRead(CONCENTRATION);
-  }
-  conc = conc / 50;
+  // for (int i = 0; i < 50; i++) {
+  //   conc += analogRead(CONCENTRATION);
+  // }
+  // conc = conc / 50;
+
     
 
   if (state == RUN) {
     
-    
+    conc=random(40);
     if (millis() - runStart > (int)curve[curveIndex + 1][0] * 1000){
     curveIndex++;
     
@@ -127,19 +128,21 @@ void loop() {
     analogWrite(WATER, waterCommand);
     analogWrite(SALT, (int)Output);
 
-    Serial.print(0);
+    Serial.print((millis() - runStart)/1000);
     Serial.print(" ");
-    Serial.print(Setpoint);
-    Serial.print(" ");
+    // Serial.print(Setpoint);
+    // Serial.print(" ");
     Serial.print(conc);
     Serial.print(" ");
-    Serial.print(waterCommand);
-    Serial.print(" ");
-    Serial.print((int)Output);
-    Serial.print(" ");
-    Serial.print(Setpoint*1.1);
-    Serial.print(" ");
-    Serial.println(Setpoint*0.9);
+    Serial.println(conc);
+    // Serial.print(" ");
+    // Serial.print(waterCommand);
+    // Serial.print(" ");
+    // Serial.print((int)Output);
+    // Serial.print(" ");
+    // Serial.print(Setpoint*1.1);
+    // Serial.print(" ");
+    // Serial.println(Setpoint*0.9);
     
  
     
@@ -216,27 +219,26 @@ void loop() {
     analogWrite(SALT, OFF);
     while (!Serial.available()) {
     }
+    String receivedString;
     if (Serial.available() > 0) {
       // Serial.readBytes((char*)&numRows, numRowsSize); // Read numRows as an int
-      String receivedString = Serial.readStringUntil('\0');
+      receivedString = Serial.readStringUntil('\n');
       Serial.println("Received numRows: " + receivedString);
       numRows = receivedString.toInt();
 
       // Define the 2D array to store received data
 
-    
-
       // Convert bytes back into 2D list of doubles
       for (int i = 0; i < numRows; i++) {
         for (int j = 0; j < 2; j++) {
-          
-          receivedString = Serial.readStringUntil('\0');
-          Serial.println(receivedString);
+          receivedString = Serial.readStringUntil('\n');
+          //Serial.println(receivedString);
           //Serial.println(receivedString);
           curve[i][j] = receivedString.toFloat();
           //Serial.println(curve[i][j]);
+  
         }
-    }
+      }
       Serial.println("Finished Loading Curve");
       for (int i = 0; i < numRows; i++) {
       Serial.print("Row ");
@@ -245,9 +247,9 @@ void loop() {
       Serial.print(curve[i][0]);
       Serial.print(", ");
       Serial.println(curve[i][1]);
+      }
+    
     }
-    }
-
     state = STOP;
   }
 
