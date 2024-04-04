@@ -54,17 +54,17 @@ float conc = 0;
 float salt_conc = 0;
 float water_conc = 0;
 
-int runStart;
-int flushStart;
+unsigned long runStart;
+unsigned long flushStart;
 unsigned long begin=0;
-int elapsedTime;
+unsigned long elapsedTime;
 int state = 5;
 int pidState = 0;
 bool flowState = false;
 int numRows = 0;
 float curve[MAX_ROWS][2] ;
 int curveIndex = 0;
-
+int i=0;
 const byte numRowsSize = sizeof(int);
 const byte dataPointSize = sizeof(double);
 const int BUFFER_SIZE = 5; // 4 bytes for the string + 1 for null terminator
@@ -103,7 +103,11 @@ void loop() {
   if (state == RUN) {
     
     conc=random(40);
-    if (millis() - runStart > (int)curve[curveIndex + 1][0] * 1000){
+    if (i==0){
+      runStart=millis();
+    }
+
+    if (millis() - runStart > (unsigned long)curve[curveIndex + 1][0] * 1000){
     curveIndex++;
     
 
@@ -128,7 +132,7 @@ void loop() {
     analogWrite(WATER, waterCommand);
     analogWrite(SALT, (int)Output);
 
-    Serial.print((millis() - runStart)/1000);
+    Serial.print(float((millis() - runStart))/1000.0);
     Serial.print(" ");
     // Serial.print(Setpoint);
     // Serial.print(" ");
@@ -154,18 +158,19 @@ void loop() {
     // Serial.print(" ");
     
     //delay(5);
-    
+    i+=1;
     
   }
   if (state == FLUSH) {
     Serial.println("flush");
-   
+    flushStart=millis();
 
     analogWrite(WATER, FULL_SPEED);
     analogWrite(SALT, FULL_SPEED);
     
 
     while (millis() - flushStart <= 10000) {
+      Serial.print(millis()-flushStart);
       Serial.print("flushing");
       Serial.print(" ");
       Serial.println(analogRead(CONCENTRATION));
@@ -271,7 +276,7 @@ void loop() {
     Serial.println(inChar);
     if (inChar.equals("1")) {
       state = RUN;
-      Serial.println("About to start...");
+      //Serial.println("About to start...");
       myPID.SetMode(AUTOMATIC);
       runStart = millis();
       curveIndex = 0;
@@ -303,6 +308,7 @@ void loop() {
         while (!Serial.available()) {
       }
       if (Serial.available() > 0) {
+         delay(50);
           receivedString = Serial.readStringUntil('\n');
           Serial.println(receivedString);
           tempKp = receivedString.toDouble();
