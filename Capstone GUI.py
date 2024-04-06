@@ -215,9 +215,9 @@ class MainPage(Frame):
         self.testOn=True
     def animate(self):
         if self.testOn==True:
-            self.filewrite=open(self.filewritename.get()+".csv","a")
-            self.filewrite.write("a")
-            self.filewrite.close()
+##            self.filewrite=open(self.filewritename.get()+".csv",str(self.t[-1]+" "+self.concSph[-1]+" "+self.concKid[-1])
+##            self.filewrite.write("a")
+##            self.filewrite.close()
             tindsph=(np.abs(np.array(self.timeconcspht) - self.t[-1])).argmin()
             if not self.timeconcsphy[tindsph]==0:
                 self.spher=(-(self.timeconcsphy[tindsph])+self.concSph[-1])/self.timeconcsphy[tindsph]
