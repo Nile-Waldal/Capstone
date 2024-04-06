@@ -139,6 +139,7 @@ void loop() {
     Serial.print(conc);
     Serial.print(" ");
     Serial.println(conc);
+    delay(50);
     // Serial.print(" ");
     // Serial.print(waterCommand);
     // Serial.print(" ");

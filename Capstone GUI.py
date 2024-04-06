@@ -39,7 +39,7 @@ class SerialManager:
         self.thread_read.start()
         
     def send_data(self, data):
-        time.sleep(0.050)
+        time.sleep(0.010)
         self.ser.write(data.encode())
 
     def read_data_thread(self):
@@ -62,42 +62,16 @@ class SerialManager:
                             self.app_instance.concKid.append(float(row[2])*math.exp(-float(row[0])*float(self.app_instance.dec.get())))
                         except:
                             continue
-                            
-##                        self.app_instance.serData.append([t,rawSph,rawKid,concSph,concKid])
-##                        tindsph=(np.abs(self.app_instance.timeconcspht - t)).argmin()
-##                        spher=(-self.app_instance.timeconcsphy[tind]+concSph)/self.app_instance.timeconcsphy[tind]
-##                        tindkid=(np.abs(self.app_instance.timeconckidt - t)).argmin()
-##                        kider=(-self.app_instance.timeconckidy[tind]+concKid)/self.app_instance.timeconckidy[tind]
-##                        
-##                        old_line1y = self.app_instance.lineSph.get_ydata()  # grab current data
-##                        new_line1y = np.r_[old_line1y[1:], concSph]  # stick new data on end of old data
-##                        self.app_instance.lineSph.set_ydata(new_line1y)        # set the new ydata
-##                        old_line1t = self.app_instance.lineSph.get_xdata()  # grab current data
-##                        new_line1t = np.r_[old_line1t[1:], t]  # stick new data on end of old data
-##                        self.app_instance.lineSph.set_xdata(new_line1t)        # set the new ydata
-##                        
-##                        old_line2y = self.app_instance.lineKid.get_ydata()  # grab current data
-##                        new_line2y = np.r_[old_line2y[1:], concKid]  # stick new data on end of old data
-##                        self.app_instance.lineKid.set_ydata(new_line2y)        # set the new ydata
-##                        old_line2t = self.app_instance.lineKid.get_xdata()  # grab current data
-##                        new_line2t = np.r_[old_line1t[2:], t]  # stick new data on end of old data
-##                        self.app_instance.lineKid.set_xdata(new_line2t)        # set the new ydata
-##                        
-##                        old_line1ery = self.app_instance.lineSpher.get_ydata()  # grab current data
-##                        new_line1ery = np.r_[old_line1ery[1:], spher]  # stick new data on end of old data
-##                        self.app_instance.lineSpher.set_ydata(new_line1ery)        # set the new ydata
-##                        old_line1ert = self.app_instance.lineSpher.get_xdata()  # grab current data
-##                        new_line1ert = np.r_[old_line1ert[1:], t]  # stick new data on end of old data
-##                        self.app_instance.lineSpher.set_xdata(new_line1ert)        # set the new ydata
-##                        
-##                        old_line2ery = self.app_instance.lineKider.get_ydata()  # grab current data
-##                        new_line2ery = np.r_[old_line2ery[1:], kider]  # stick new data on end of old data
-##                        self.app_instance.lineKider.set_ydata(new_line2ery)        # set the new ydata
-##                        old_line2ert = self.app_instance.lineKider.get_xdata()  # grab current data
-##                        new_line2ert = np.r_[old_line2ert[1:], t]  # stick new data on end of old data
-##                        self.app_instance.lineKider.set_xdata(new_line2ert)        # set the new ydata
-##
-##                        self.app_instance.filewrite.write(str(t)+","+str(rawSph)+str(concSph)+","+str(rawKid)+","+str(concKid)+"\n")
+                if len(self.app_instance.rawSph)<len(self.app_instance.t) and len(self.app_instance.rawKid)<len(self.app_instance.t):
+                    self.app_instance.t.pop(-1)
+                elif len(self.app_instance.rawSph)<len(self.app_instance.t) and len(self.app_instance.rawKid)==len(self.app_instance.t):
+                    self.app_instance.t.pop(-1)
+                    self.app_instance.rawKid.pop(-1)
+                    self.app_instance.concKid.pop(-1)
+                elif len(self.app_instance.rawSph)==len(self.app_instance.t) and len(self.app_instance.rawKid)<len(self.app_instance.t):
+                    self.app_instance.t.pop(-1)
+                    self.app_instance.rawSph.pop(-1)
+                    self.app_instance.concSph.pop(-1)
     def close(self):
         self.app_instance.buttonCOM.config(text="Connect",command=self.app_instance.connectCOM)
        
@@ -155,10 +129,7 @@ class MainPage(Frame):
         self.axSpher=self.fig.add_subplot(222)
         self.axKid=self.fig.add_subplot(223)
         self.axKider=self.fig.add_subplot(224)
-        self.lineSph,=self.axSph.plot([],[],lw=2)
-        self.lineSpher,=self.axSpher.plot([],[],lw=2)
-        self.lineKid,=self.axKid.plot([],[],lw=2)
-        self.lineKider,=self.axKider.plot([],[],lw=2)
+
         self.canvas=FigureCanvasTkAgg(self.fig,master=self)
         self.toolbarFrame=Frame(self)
         self.toolbarFrame.grid(row=12,column=4,columnspan=2,padx=5,pady=5)
@@ -195,10 +166,7 @@ class MainPage(Frame):
         if not hasattr(self, 'serial_manager'):
             print("Not connected to serial port")
             return
-
- #       data_to_send = self.send_text.get("1.0", "end-1c") + '\n'
         self.serial_manager.send_data(data_to_send)
-        #print("Data sent to Arduino")
 
     def update_serial_text(self, received_data):
         self.serialMonitor.insert(END, received_data + "\n")
@@ -210,53 +178,27 @@ class MainPage(Frame):
         self.filewrite=open(self.filewritename.get()+".csv","x")
         self.filewrite.write("Time (s),Sphere Concentration, Sphere Activity, Kidney Concentration, Kidney Activity\n")
         self.filewrite.close()
-        #self.ani=animation.FuncAnimation(self.fig,self.animate,10000)
         
         self.testOn=True
     def animate(self):
         if self.testOn==True:
-##            self.filewrite=open(self.filewritename.get()+".csv",str(self.t[-1]+" "+self.concSph[-1]+" "+self.concKid[-1])
-##            self.filewrite.write("a")
-##            self.filewrite.close()
-            tindsph=(np.abs(np.array(self.timeconcspht) - self.t[-1])).argmin()
-            if not self.timeconcsphy[tindsph]==0:
-                self.spher=(-(self.timeconcsphy[tindsph])+self.concSph[-1])/self.timeconcsphy[tindsph]
-            else:
-                self.spher=1
-            tindkid=(np.abs(np.array(self.timeconckidt) - self.t[-1])).argmin()
-            if not self.timeconckidy[tindkid]==0:
-                self.kider=(-self.timeconckidy[tindkid]+self.concKid[-1])/self.timeconckidy[tindkid]
-            else:
-                self.kider=1
+            self.filewrite=open(self.filewritename.get()+".csv","a")
+            self.filewrite.write(str(self.t[-1])+" "+str(self.rawSph[-1])+" "+str(self.rawKid[-1])+" "+str(self.concSph[-1])+" "+str(self.concKid[-1])+"\n")
+            self.filewrite.close()
             
-            old_line1y = self.lineSph.get_ydata()  # grab current data
-            new_line1y = np.r_[old_line1y[1:], self.concSph[-1]]  # stick new data on end of old data
-            self.lineSph.set_ydata(new_line1y)        # set the new ydata
-            old_line1t = self.lineSph.get_xdata()  # grab current data
-            new_line1t = np.r_[old_line1t[1:], self.t[-1]]  # stick new data on end of old data
-            self.lineSph.set_xdata(new_line1t)        # set the new ydata
-            
-            old_line2y = self.lineKid.get_ydata()  # grab current data
-            new_line2y = np.r_[old_line2y[1:], self.concKid[-1]]  # stick new data on end of old data
-            self.lineKid.set_ydata(new_line2y)        # set the new ydata
-            old_line2t = self.lineKid.get_xdata()  # grab current data
-            new_line2t = np.r_[old_line1t[2:], self.t[-1]]  # stick new data on end of old data
-            self.lineKid.set_xdata(new_line2t)        # set the new ydata
-            
-            old_line1ery = self.lineSpher.get_ydata()  # grab current data
-            new_line1ery = np.r_[old_line1ery[1:], self.spher]  # stick new data on end of old data
-            self.lineSpher.set_ydata(new_line1ery)        # set the new ydata
-            old_line1ert = self.lineSpher.get_xdata()  # grab current data
-            new_line1ert = np.r_[old_line1ert[1:], self.t[-1]]  # stick new data on end of old data
-            self.lineSpher.set_xdata(new_line1ert)        # set the new ydata
-            
-            old_line2ery = self.lineKider.get_ydata()  # grab current data
-            new_line2ery = np.r_[old_line2ery[1:], self.kider]  # stick new data on end of old data
-            self.lineKider.set_ydata(new_line2ery)        # set the new ydata
-            old_line2ert = self.lineKider.get_xdata()  # grab current data
-            new_line2ert = np.r_[old_line2ert[1:], self.t[-1]]  # stick new data on end of old data
-            self.lineKider.set_xdata(new_line2ert)
+            self.axSph.clear()
+            self.axSpher.clear()
+            self.axKid.clear()
+            self.axKider.clear()
+            self.axSph.plot(self.t[0:len(self.concSph)],self.concSph)
+            self.axKid.plot(self.t[0:len(self.concKid)],self.concKid)
+
+            self.spher=np.divide(np.subtract(np.array(self.concSph),np.array(self.timeconcsphy[0:np.array(self.concSph).size])),np.array(self.timeconcsphy[0:np.array(self.concSph).size]),out=np.zeros_like(np.subtract(np.array(self.concSph),np.array(self.timeconcsphy[0:np.array(self.concSph).size]))), where=np.array(self.timeconcsphy[0:np.array(self.concSph).size])!=0)
+            self.kider=np.divide(np.subtract(np.array(self.concKid),np.array(self.timeconckidy[0:np.array(self.concKid).size])),np.array(self.timeconckidy[0:np.array(self.concKid).size]),out=np.zeros_like(np.subtract(np.array(self.concKid),np.array(self.timeconckidy[0:np.array(self.concKid).size]))), where=np.array(self.timeconckidy[0:np.array(self.concKid).size])!=0)
+            self.axSpher.plot(self.t[0:len(self.spher)],list(self.spher))
+            self.axKider.plot(self.t[0:len(self.kider)],list(self.kider))
             self.fig.canvas.draw()
+
         self.after(10, self.animate)
         
     def calibrate(self):
